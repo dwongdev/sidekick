@@ -89,12 +89,21 @@ func RunCommand(client *ssh.Client, cmd string) (chan string, chan string, error
 	return stdOutChannel, errChannel, nil
 }
 
-func RunCommandWithTUIHook(client *ssh.Client, cmd string, p *tea.Program) {
+func RunCommandWithTUIHook(client *ssh.Client, cmd string, p *tea.Program, envVars ...EnvVar) {
 	session, err := client.NewSession()
 	if err != nil {
 		log.Fatalf("Failed to create session: %s", err)
 	}
 	defer session.Close()
+
+	for _, env := range envVars {
+		for key, value := range env {
+			err := session.Setenv(key, value)
+			if err != nil {
+				p.Send(render.ErrorMsg{ErrorStr: fmt.Sprintf("error is:%s", err)})
+			}
+		}
+	}
 
 	stdoutReader, err := session.StdoutPipe()
 	if err != nil {
@@ -124,7 +133,11 @@ func RunCommandWithTUIHook(client *ssh.Client, cmd string, p *tea.Program) {
 	}
 
 	if err := session.Wait(); err != nil {
-		p.Send(render.ErrorMsg{ErrorStr: fmt.Sprintf("error running command - %s: - %s", cmd, err) + err.Error()})
+		if len(cmd) >= 80 {
+			p.Send(render.ErrorMsg{ErrorStr: fmt.Sprintf("Failed with following error - %s", err) + err.Error()})
+		} else {
+			p.Send(render.ErrorMsg{ErrorStr: fmt.Sprintf("error running command - %s: - %s", cmd, err) + err.Error()})
+		}
 	}
 }
 

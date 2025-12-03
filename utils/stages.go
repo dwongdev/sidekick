@@ -15,6 +15,7 @@ limitations under the License.
 package utils
 
 import (
+	"encoding/base64"
 	"fmt"
 	"strings"
 )
@@ -36,7 +37,7 @@ var SetupStage = CommandsStage{
 	SpinnerSuccessMessage: "VPS updated and setup successfully",
 	SpinnerFailMessage:    "Error happened running basic setup commands",
 	Commands: []string{
-		fmt.Sprintf("echo '%s' > ./setup.sh", SetupStageScript),
+		fmt.Sprintf("echo '%s' | base64 -d > setup.sh", base64.StdEncoding.EncodeToString([]byte(SetupStageScript))),
 		"chmod +x ./setup.sh",
 		"sudo ./setup.sh",
 		"rm ./setup.sh",

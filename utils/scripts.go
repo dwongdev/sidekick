@@ -27,52 +27,19 @@ var EnvEncryptionScript = `
 	sops encrypt --output-type dotenv --age $PUBKEY $ENVFILE > encrypted.env
 	`
 
-var DeployAppWithEnvScript = `
-	export SOPS_AGE_KEY=$age_secret_key && \
-	cd $service_name && \
-	old_container_id=$(docker ps -f name=$service_name -q | tail -n1) && \
-	sops exec-env encrypted.env 'docker compose -p sidekick up -d --no-deps --scale $service_name=2 --no-recreate $service_name' && \
-	new_container_id=$(docker ps -f name=$service_name -q | head -n1) && \
-	new_container_ip=$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $new_container_id) && \
-	curl --silent --include --retry-connrefused --retry 30 --retry-delay 1 --fail http://$new_container_ip:$app_port/up || exit 1 && \
-	docker stop $old_container_id && \
-	docker rm $old_container_id && \
-	sops exec-env encrypted.env 'docker compose -p sidekick up -d --scale $service_name=1 --no-recreate $service_name'
-	`
-
-var ForceDeployWithEnvScript = `
-	export SOPS_AGE_KEY=$age_secret_key && \
-	cd $service_name && \
-	old_container_id=$(docker ps -f label="traefik.enable=true" -q | tail -n1) && \
-	docker stop $old_container_id && \
-	docker rm $old_container_id && \
-	sops exec-env encrypted.env 'docker compose -p sidekick up -d'
-	`
-
 var DeployAppScript = `
-	cd $service_name && \
-	old_container_id=$(docker ps -f name=$service_name -q | tail -n1) && \
-	docker compose -p sidekick up -d --no-deps --scale $service_name=2 --no-recreate $service_name && \
-	new_container_id=$(docker ps -f name=$service_name -q | head -n1) && \
-	new_container_ip=$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $new_container_id) && \
-	curl --silent --include --retry-connrefused --retry 30 --retry-delay 1 --fail http://$new_container_ip:$app_port/up || exit 1 && \
-	docker stop $old_container_id && \
-	docker rm $old_container_id && \
-	docker compose -p sidekick up -d --scale $service_name=1 --no-recreate $service_name
-	`
-
-var DeployApp = `
 #!/usr/bin/env bash
 set -euo pipefail
 
-# minimal configuration (edit as needed)
 SERVICE="$service_name"
 APP_PORT="$app_port"
 SLEEP_AFTER_START=3
+HAS_ENV=$has_env
 COMPOSE_PROJECT="sidekick"
 
 # helper for nicer logs
 log() { echo "[$(date +'%T')] $*"; }
+
 
 # move into service dir (assumes compose file lives in ./<service>/)
 if [[ ! -d "$SERVICE" ]]; then
@@ -82,7 +49,6 @@ fi
 
 cd "$SERVICE"
 
-log "Starting rolling replace for service='$SERVICE', port=$APP_PORT"
 
 # find the old container (oldest for this service)
 old_container_id=$(docker ps -f "name=${SERVICE}" -q | tail -n1 || true)
@@ -90,11 +56,15 @@ if [[ -z "$old_container_id" ]]; then
   log "ERROR: no running containers found for service '${SERVICE}'."
   exit 3
 fi
-log "Old container (to be replaced): $old_container_id"
+
+echo $old_container_id
 
 # create a new instance by scaling up to 2 (no deps, don't recreate existing)
-log "Scaling up to 2 (creating a new container)..."
-docker compose -p "$COMPOSE_PROJECT" up -d --no-deps --scale "$SERVICE"=2 --no-recreate "$SERVICE"
+if [ $HAS_ENV ]; then
+	sops exec-env encrypted.env "docker compose -p sidekick up -d --no-deps --scale ${SERVICE}=2 --no-recreate ${SERVICE}"
+else
+	docker compose -p "$COMPOSE_PROJECT" up -d --no-deps --scale "$SERVICE"=2 --no-recreate "$SERVICE"
+fi
 
 # optional small wait for the container to begin initializing
 if (( SLEEP_AFTER_START > 0 )); then
@@ -115,7 +85,6 @@ if [[ "$new_container_id" == "$old_container_id" ]]; then
   exit 5
 fi
 
-log "New container: $new_container_id"
 
 # get internal IP of the new container
 new_container_ip=$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' "$new_container_id" || true)
@@ -128,7 +97,6 @@ if [[ -z "$new_container_ip" ]]; then
   exit 6
 fi
 
-log "New container IP: $new_container_ip"
 
 # health check (preserve your curl options)
 HEALTH_URL="http://$new_container_ip:$APP_PORT/"
@@ -138,7 +106,11 @@ if ! curl --silent --include --retry-connrefused --retry 30 --retry-delay 1 --fa
   log "ERROR: health check failed against $HEALTH_URL"
   log "Removing failed new container $new_container_id and restoring state..."
   docker rm -f "$new_container_id" || true
-  docker compose -p "$COMPOSE_PROJECT" up -d --scale "$SERVICE"=1 --no-recreate "$SERVICE" || true
+	if [ $HAS_ENV ]; then
+		sops exec-env encrypted.env "docker compose -p ${COMPOSE_PROJECT} up -d --scale ${SERVICE}=1 --no-recreate ${SERVICE} || true"
+	else 
+  	docker compose -p "$COMPOSE_PROJECT" up -d --scale "$SERVICE"=1 --no-recreate "$SERVICE" || true
+	fi
   exit 7
 fi
 
@@ -150,12 +122,17 @@ docker rm "$old_container_id"
 
 # scale back to 1 (remove the spare)
 docker compose -p "$COMPOSE_PROJECT" up -d --scale "$SERVICE"=1 --no-recreate "$SERVICE"
+if [ $HAS_ENV ]; then
+	sops exec-env encrypted.env "docker compose -p ${COMPOSE_PROJECT} up -d --scale ${SERVICE}=1 --no-recreate ${SERVICE} --remove-orphans"
+else
+	docker compose -p "$COMPOSE_PROJECT" up -d --scale "$SERVICE"=1 --no-recreate "$SERVICE" --remove-orphans
+fi
 
-log "Done — replaced $old_container_id with $new_container_id and scaled to 1."
+# clean up docker system 
+log "Pruning docker system"
+docker system prune -f
 
 exit 0
-
-
 	`
 
 var CheckGitTreeScript = `
@@ -182,8 +159,10 @@ wait_for_locks() {
 }
 
 echo "\033[0;32mUpdating SSH config...\033[0m"
-sudo sed -i 's/PermitRootLogin yes/PermitRootLogin no/' /etc/ssh/sshd_config && sudo systemctl restart ssh
-sudo systemctl restart ssh
+ex -s -c 'g/PermitRootLogin/d' -c 'g/AcceptEnv SOPS_*/d' -c 'wq' /etc/ssh/sshd_config
+echo 'AcceptEnv SOPS_*' | tee -a /etc/ssh/sshd_config > /dev/null
+echo 'PermitRootLogin no' | tee -a /etc/ssh/sshd_config > /dev/null
+systemctl restart ssh
 
 echo "\033[0;32mUpdating Packages...\033[0m"
 wait_for_locks

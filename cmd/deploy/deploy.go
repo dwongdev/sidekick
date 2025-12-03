@@ -146,24 +146,12 @@ func stage6Deploy(sshClient *ssh.Client, appConfig utils.SidekickAppConfig, envF
 	replacer := strings.NewReplacer(
 		"$service_name", appConfig.Name,
 		"$app_port", fmt.Sprint(appConfig.Port),
-		"$age_secret_key", viper.GetString("secretKey"),
+		"$has_env", appConfig.Env.File,
 	)
 
-	if appConfig.Env.File != "" {
-		deployScript := replacer.Replace(utils.DeployAppWithEnvScript)
-		_, runVersionOutChan, sessionErr := utils.RunCommand(sshClient, deployScript)
-		if sessionErr != nil {
-			return fmt.Errorf("failed to deploy application with environment file: %w", sessionErr)
-		}
-		go func() {
-			p.Send(render.LogMsg{LogLine: <-runVersionOutChan + "\n"})
-			time.Sleep(time.Millisecond * 100)
-		}()
-	} else {
-		deployScript := replacer.Replace(utils.DeployApp)
-		utils.RunCommandWithTUIHook(sshClient, deployScript, p)
-		time.Sleep(time.Second * 2)
-	}
+	deployScript := replacer.Replace(utils.DeployAppScript)
+	utils.RunCommandWithTUIHook(sshClient, deployScript, p, utils.EnvVar{"SOPS_AGE_KEY": viper.GetString("secretKey")})
+	time.Sleep(time.Second * 2)
 
 	cleanOutChan, _, sessionErr := utils.RunCommand(sshClient, fmt.Sprintf("cd %s && rm %s", appConfig.Name, fmt.Sprintf("%s-latest.tar", appConfig.Name)))
 	if sessionErr != nil {

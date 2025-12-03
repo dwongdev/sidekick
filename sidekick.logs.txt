@@ -1,0 +1,111 @@
+
+=== STAGE 4 ERROR LOG - 2025-12-03 16:29:53 ===
+Stage: Setting up VPS
+=== LOGS START ===
+bash: -c: line 15: syntax error near unexpected token `('
+bash: -c: line 15: `sudo sed -i -E 's/^(#)?PermitRootLogin\s+.*/PermitRootLogin no/' /etc/ssh/sshd_config'
+Failed with following error - Process exited with status 2Process exited with status 2
+=== LOGS END ===
+
+
+=== STAGE 4 ERROR LOG - 2025-12-03 16:30:40 ===
+Stage: Setting up VPS
+=== LOGS START ===
+bash: -c: line 15: syntax error near unexpected token `('
+bash: -c: line 15: `sed -i -E 's/^(#)?PermitRootLogin\s+.*/PermitRootLogin no/' /etc/ssh/sshd_config'
+Failed with following error - Process exited with status 2Process exited with status 2
+=== LOGS END ===
+
+
+=== STAGE 4 ERROR LOG - 2025-12-03 16:32:33 ===
+Stage: Setting up VPS
+=== LOGS START ===
+bash: -c: line 15: syntax error near unexpected token `('
+bash: -c: line 15: `sudo sed -i -E 's/^(#)?PermitRootLogin\s+.*/PermitRootLogin no/' /etc/ssh/sshd_config'
+Failed with following error - Process exited with status 2Process exited with status 2
+=== LOGS END ===
+
+
+=== STAGE 4 ERROR LOG - 2025-12-03 16:43:33 ===
+Stage: Setting up VPS
+=== LOGS START ===
+bash: -c: line 15: syntax error near unexpected token `('
+bash: -c: line 15: `sudo sed -i -E 's/^(#)?PermitRootLogin\s+.*/PermitRootLogin no/' /etc/ssh/sshd_config'
+Failed with following error - Process exited with status 2Process exited with status 2
+=== LOGS END ===
+
+
+=== STAGE 4 ERROR LOG - 2025-12-03 16:45:43 ===
+Stage: Setting up VPS
+=== LOGS START ===
+[0;32mUpdating SSH config...[0m
+sed: -e expression #1, char 35: unterminated `s' command
+error running command - sudo ./setup.sh: - Process exited with status 1Process exited with status 1
+=== LOGS END ===
+
+
+=== STAGE 4 ERROR LOG - 2025-12-03 16:48:46 ===
+Stage: Setting up VPS
+=== LOGS START ===
+[0;32mUpdating SSH config...[0m
+error running command - sudo ./setup.sh: - Process exited with status 1Process exited with status 1
+=== LOGS END ===
+
+
+=== STAGE 4 ERROR LOG - 2025-12-03 20:29:24 ===
+Stage: Setting up VPS
+=== LOGS START ===
+[0;32mUpdating SSH config...[0m
+error running command - sudo ./setup.sh: - Process exited with status 1Process exited with status 1
+=== LOGS END ===
+
+
+=== STAGE 4 ERROR LOG - 2025-12-03 20:29:40 ===
+Stage: Setting up VPS
+=== LOGS START ===
+[0;32mUpdating SSH config...[0m
+error running command - sudo ./setup.sh: - Process exited with status 1Process exited with status 1
+=== LOGS END ===
+
+
+=== STAGE 4 ERROR LOG - 2025-12-03 20:31:56 ===
+Stage: Setting up VPS
+=== LOGS START ===
+[0;32mUpdating SSH config...[0m
+error running command - sudo ./setup.sh: - Process exited with status 1Process exited with status 1
+=== LOGS END ===
+
+
+=== STAGE 4 ERROR LOG - 2025-12-03 20:32:17 ===
+Stage: Setting up VPS
+=== LOGS START ===
+[0;32mUpdating SSH config...[0m
+sed: -e expression #1, char 35: unterminated `s' command
+error running command - sudo ./setup.sh: - Process exited with status 1Process exited with status 1
+=== LOGS END ===
+
+
+=== STAGE 4 ERROR LOG - 2025-12-03 20:33:52 ===
+Stage: Setting up VPS
+=== LOGS START ===
+bash: -c: line 15: syntax error near unexpected token `('
+bash: -c: line 15: `sed -i -E 's/^(#)?PermitRootLogin\s+.*/PermitRootLogin no/' /etc/ssh/sshd_config'
+Failed with following error - Process exited with status 2Process exited with status 2
+=== LOGS END ===
+
+
+=== STAGE 4 ERROR LOG - 2025-12-03 20:40:59 ===
+Stage: Setting up VPS
+=== LOGS START ===
+[0;32mUpdating SSH config...[0m
+error running command - sudo ./setup.sh: - Process exited with status 1Process exited with status 1
+=== LOGS END ===
+
+
+=== STAGE 4 ERROR LOG - 2025-12-03 20:42:08 ===
+Stage: Setting up VPS
+=== LOGS START ===
+[0;32mUpdating SSH config...[0m
+error running command - sudo ./setup.sh: - Process exited with status 1Process exited with status 1
+=== LOGS END ===
+

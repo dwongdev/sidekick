@@ -88,3 +88,4 @@ type SidekickAppConfig struct {
 	DatabaseConfig SidekickAppDatabaseConfig  `yaml:"database,omitempty"`
 	PreviewEnvs    map[string]SidekickPreview `yaml:"previewEnvs,omitempty"`
 }
+type EnvVar map[string]string
