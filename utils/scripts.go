@@ -123,9 +123,9 @@ docker rm "$old_container_id"
 # scale back to 1 (remove the spare)
 docker compose -p "$COMPOSE_PROJECT" up -d --scale "$SERVICE"=1 --no-recreate "$SERVICE"
 if [ $HAS_ENV ]; then
-	sops exec-env encrypted.env "docker compose -p ${COMPOSE_PROJECT} up -d --scale ${SERVICE}=1 --no-recreate ${SERVICE} --remove-orphans"
+	sops exec-env encrypted.env "docker compose -p ${COMPOSE_PROJECT} up -d --scale ${SERVICE}=1 --no-recreate ${SERVICE}"
 else
-	docker compose -p "$COMPOSE_PROJECT" up -d --scale "$SERVICE"=1 --no-recreate "$SERVICE" --remove-orphans
+	docker compose -p "$COMPOSE_PROJECT" up -d --scale "$SERVICE"=1 --no-recreate "$SERVICE"
 fi
 
 # clean up docker system 
